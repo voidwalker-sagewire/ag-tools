@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HerdMate | BCS Management Tool V2</title>
+    
+    <style>
+        /* --- HERDMATE BRANDING CSS --- */
+        body { 
+            font-family: sans-serif; 
+            padding: 20px; 
+            background-color: #14141A; /* Ranch Slate */
+            color: #f4f6f7; 
+            font-size: 1.05em; /* SLIGHTLY LARGER BASE FONT */
+        }
+        .container { 
+            max-width: 700px; 
+            margin: 0 auto; 
+            background: #292930; /* Soil/Dark Taupe */
+            padding: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); 
+        }
+        h1 { 
+            color: #B85C38; /* Primary Accent (Rust) */
+            text-align: center; 
+            margin-bottom: 5px; 
+        }
+        /* BRIGHTENED PARAGRAPH TEXT for better contrast */
+        p { 
+            color: #ccc; /* BRIGHTER LIGHT GRAY */
+            text-align: center; 
+            margin-bottom: 25px; 
+        }
+
+        /* BRIGHTENED LABEL TEXT for better contrast */
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            color: #aeb6bf; /* LIGHT GRAY/SILVER */
+            font-weight: bold; 
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #7D716A; /* Aged Bronze Border */
+            border-radius: 5px;
+            background-color: #34343d; 
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .output-box {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #5A946E; /* Forage Green Border */
+            background-color: #34343d;
+        }
+
+        .output-box h3 {
+            color: #B85C38; /* Rust Accent */
+            border-bottom: 1px solid #7D716A;
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+        
+        #bcs-status {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* Image Display Styles (No changes here, remains functional) */
+        #bcs-visual-container {
+            margin-top: 15px;
+            padding: 10px;
+            text-align: center;
+            background-color: #14141A;
+            border-radius: 5px;
+        }
+
+        #bcs-visual-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .status-danger { color: #e74c3c; } 
+        .status-ideal { color: #2ecc71; } 
+        .status-caution { color: #f1c40f; } 
+        
+        /* Brighten note text */
+        .note {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #34343d;
+            border-left: 5px solid #B85C38;
+            font-size: 0.9em;
+            color: #f4f6f7; /* ENSURE NOTE TEXT IS BRIGHT */
+        }
+        /* --- END HERDMATE BRANDING CSS --- */
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🐂 HerdMate | BCS Reference V2</h1>
+    <p>Select the Body Condition Score to view the meaning, management action, and visual reference.</p>
+
+    <label for="bcs-select">Select Body Condition Score (BCS)</label>
+    <select id="bcs-select" onchange="displayBCSInfo()">
+        <option value="5" selected>5 - Ideal (Baseline)</option>
+        <option value="1">1 - Emaciated (Extreme)</option>
+        <option value="2">2 - Very Thin</option>
+        <option value="3">3 - Thin</option>
+        <option value="4">4 - Borderline</option>
+        <option value="6">6 - Good</option>
+        <option value="7">7 - Fleshy</option>
+        <option value="8">8 - Fat</option>
+        <option value="9">9 - Obese (Extreme)</option>
+    </select>
+
+    <div class="output-box">
+        <h3>BCS Assessment & Action</h3>
+        <div id="bcs-status" class="status-ideal"></div>
+        <p id="bcs-recommendation"></p>
+
+        <div id="bcs-visual-container">
+            <img id="bcs-visual-img" src="" alt="Visual Reference" onerror="this.style.display='none'">
+            <p id="visual-placeholder" style="color: #7D716A; font-style: italic;">Visual reference loading or unavailable.</p>
+        </div>
+    </div>
+    
+    <div class="note">
+        BCS is the most accurate predictor of reproductive performance. Aim for a BCS of 5 or 6 prior to calving.
+    </div>
+</div>
+
+<script>
+    const BCS_SELECT = document.getElementById('bcs-select');
+    const BCS_STATUS_EL = document.getElementById('bcs-status');
+    const BCS_RECOMMENDATION_EL = document.getElementById('bcs-recommendation');
+    const BCS_VISUAL_IMG = document.getElementById('bcs-visual-img');
+    const VISUAL_PLACEHOLDER = document.getElementById('visual-placeholder');
+
+    // Data Source: BCS Definitions, Recommendations, and a PLACEHOLDER FOR IMAGE URL
+    // NOTE: You must replace these placeholder URLs with actual public links to BCS diagrams.
+    const BCS_DATA = {
+        '1': {
+            status: "EMACIATED / EXTREME DANGER",
+            class: "status-danger",
+            recommendation: "Animal is critically weak. IMMEDIATE aggressive nutritional intervention is required. High risk of death.",
+            visual: "https://i.imgur.com/bcs1.jpg" // REPLACE WITH ACTUAL URL
+        },
+        '2': {
+            status: "VERY THIN / EMERGENCY",
+            class: "status-danger",
+            recommendation: "Requires major feed increase. Ribs and backbone highly visible. Little to no chance of rebreeding.",
+            visual: "https://i.imgur.com/bcs2.jpg" // REPLACE WITH ACTUAL URL
+        },
+        '3': {
+            status: "THIN / CRITICAL",
+            class: "status-caution",
+            recommendation: "Feed supplementation necessary. Reproduction may be severely delayed. Increase energy intake significantly.",
+            visual: "https://i.imgur.com/bcs3.jpg" // REPLACE WITH ACTUAL URL
+        },
+        '4': {
+            status: "BORDERLINE / NEEDS ATTENTION",
+            class: "status-caution",
+            recommendation: "Slightly below ideal. Increase diet quality, especially 60 days pre-calving. Monitor closely.",
+            visual: "https://i.imgur.com/bcs4.jpg" // REPLACE WITH ACTUAL URL
+        },
+        '5': {
+            status: "IDEAL / OPTIMAL",
+            class: "status-ideal",
+            recommendation: "Excellent condition. Ribs are not visible, but a slight fat cover is present. Maintain current nutritional program.",
+            visual: "https://i.imgur.com/bcs5.jpg" // REPLACE WITH ACTUAL URL
+        },
+        '6': {
+            status: "GOOD / SLIGHTLY FAT",
+            class: "status-ideal",
+            recommendation: "Good fat reserve, slightly above ideal. No change needed unless weight becomes excessive. Excellent body reserve.",
+            visual: "https://i.imgur.com/bcs6.jpg" // REPLACE WITH ACTUAL URL
+        },
+        '7': {
+            status: "FLESHY / MILD OVERCONDITION",
+            class: "status-caution",
+            recommendation: "Monitor feed intake. Expensive and inefficient, but reproductive success remains high.",
+            visual: "https://i.imgur.com/bcs7.jpg" // REPLACE WITH ACTUAL URL
+        },
+        '8': {
+            status: "FAT / EXCESSIVE",
+            class: "status-danger",
+            recommendation: "Overly fat. Reduce feed intake. High cost and increased risk of calving difficulty (dystocia).",
+            visual: "https://i.imgur.com/bcs8.jpg" // REPLACE WITH ACTUAL URL
+        },
+        '9': {
+            status: "OBESE / HIGH DANGER",
+            class: "status-danger",
+            recommendation: "Critically obese. Severe feed restriction needed. High risk of calving problems and reduced milk production.",
+            visual: "https://i.imgur.com/bcs9.jpg" // REPLACE WITH ACTUAL URL
+        }
+    };
+
+    function displayBCSInfo() {
+        const selectedBCS = BCS_SELECT.value;
+        const data = BCS_DATA[selectedBCS];
+
+        if (data) {
+            // 1. Update status text and style
+            BCS_STATUS_EL.textContent = `Score ${selectedBCS}: ${data.status}`;
+            BCS_STATUS_EL.className = data.class;
+            BCS_RECOMMENDATION_EL.textContent = data.recommendation;
+
+            // 2. Update Visual Reference
+            if (data.visual && data.visual.startsWith('http')) {
+                BCS_VISUAL_IMG.src = data.visual;
+                BCS_VISUAL_IMG.style.display = 'block';
+                VISUAL_PLACEHOLDER.style.display = 'none';
+            } else {
+                // If no URL or placeholder is found
+                BCS_VISUAL_IMG.style.display = 'none';
+                VISUAL_PLACEHOLDER.style.display = 'block';
+                VISUAL_PLACEHOLDER.textContent = "Visual reference unavailable.";
+            }
+        }
+    }
+
+    // Initialize the display function on page load
+    window.onload = function() {
+        displayBCSInfo();
+    };
+</script>
+</body>
+</html>
